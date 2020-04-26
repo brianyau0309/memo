@@ -1,0 +1,110 @@
+#!/bin/sh
+
+memo="$HOME/Workdesk/memo"
+[ -d "$memo/allmemo" ] || mkdir "$pvm/allmemo"
+[ -d "$memo/tmp" ] || mkdir "$memo/tmp"
+
+writeMemo() {
+  option="e"
+  while :; do
+    case "$option" in
+      e)
+        $EDITOR "$memo/tmp/$1"
+        if [ -f "$memo/tmp/$1" ];then
+          if [ "$(head -n 1 $memo/tmp/$1)" = "" ];then
+            echo "\033[93mError: Empty Tags in line 1"
+            read -p "Back to Edit..." gobackla
+          else
+            previewMemo "$memo/tmp/$1"
+            read -p "Enter to Save([e]dit/[a]bort) " option
+          fi
+        else
+          echo "\033[93mError: Empty Memo"
+          read -p "([e]dit/[a]bort) " option
+          [ "$option" != "e"  ] && option="a"
+        fi
+        ;;
+      a) echo "Memo Aborted" && break ;;
+      "") cp "$memo/tmp/$1" "$memo/allmemo/$1" && echo "Memo Done" && break ;;
+      *) read -p "Enter to Save([e]dit/[a]bort) " option ;;
+    esac
+  done
+
+  rm $memo/tmp/* 2>/dev/null
+}
+
+previewMemo() {
+  #clear
+  echo "\033[93m--------------------- Memo Preview ---------------------"
+  echo " Memo Name: $(echo $1 | rev |cut -d"/" -f 1 | rev)"
+  echo " Tags: $(head -n 1 $1)"
+  echo "--------------------------------------------------------\033[92m"
+  sed 1d $1 | awk '{ print " > "$0 }'
+  echo "\033[93m--------------------------------------------------------"
+  echo
+}
+
+lastMemo() {
+  last="$(ls -t "$memo/allmemo" | head -n 1)"
+  [ -z $1 ] && last="$(ls -t "$memo/allmemo" | head -n 1)" || last="$(grep -rin "$1" "$memo/allmemo" | grep ":1:" | head -n 1 | cut -d: -f1 | sed "s|$memo/allmemo/||g")"
+  if [ -z "$last" ];then
+    echo "Memo Not Found"
+  else
+    previewMemo "$memo/allmemo/$last"
+    [ -z "$2" ] && read -p "Enter to Quit([e]dit/[d]elete) " option
+    case $option in
+      e) 
+        cp "$memo/allmemo/$last" "$memo/tmp/$last"
+        writeMemo $last ;;
+      d) rm "$memo/allmemo/$last" && echo "Memo Deleted";;
+      *) ;;
+    esac
+  fi
+}
+
+listMemo() {
+  clear
+  [ -z $1 ] && list="$(ls -t "$memo/allmemo" | head -n 10)" || list="$(grep -rin "$1" "$memo/allmemo" | grep ":1:" | cut -d: -f1 | sed "s|$memo/allmemo/||g")"
+  echo "\033[93m--------------------- Memo Listing ---------------------"
+  [ ! -z $1 ] && echo " Search: $(echo $1 | sed -e 's/\.\*/ /g')" &&
+  echo "--------------------------------------------------------\033[92m" ||
+  printf "\033[92m"
+  if [ -z "$list" ];then
+    echo "Memo Not Found"
+  else
+    echo $list | tr ' ' '\n' | awk -v memo="$memo" '{ print NR-1":", $1; system("echo \"Tags: $(cat "memo"/allmemo/"$1" | head -n 1)\n\"") }'
+    printf "\033[93m"
+    read -p "Select: " select
+    [ -z "$select" ] && select=0
+    case $select in
+      0|1|2|3|4|5|6|7|8|9)
+        target="$(echo $list | cut -d' ' -f $(expr $select + 1))"
+        previewMemo "$memo/allmemo/$target"
+        read -p "Enter to Quit([e]dit/[d]elete) " option
+        case $option in
+          e) 
+            cp "$memo/allmemo/$target" "$memo/tmp/$target"
+            writeMemo $target ;;
+          d) rm "$memo/allmemo/$target" && echo "Memo Deleted";;
+          *) ;;
+        esac
+        ;;
+      *) ;;
+     esac
+  fi
+}
+
+case "$1" in
+  "") writeMemo "memo-$(date '+%Y-%m-%d_%H-%M-%S')" ;;
+  last) 
+    case "$2" in
+      "") lastMemo ;;
+      noask) lastMemo "$(echo "$@" | cut -d' ' -f1-2 --complement | sed 's/\s/.*/g')" "no";;
+      *) lastMemo "$(echo "$@" | cut -d' ' -f1 --complement | sed 's/\s/.*/g')" ;;
+    esac ;;
+  list)
+    case "$2" in
+      "") listMemo ;; 
+      *) listMemo "$(echo "$@" | cut -d' ' -f1 --complement | sed 's/\s/.*/g')" ;;
+    esac ;;
+esac

@@ -1,0 +1,4 @@
+#!/bin/sh
+# getting paragraph by keyword in a memo
+# mgp <memo-tag> <keyword>
+memo last noask $(echo "$@" | cut -d' ' -f1 --complement) | sed 's/ > //g' | awk -v RS='' -v ORS='\n\n' "BEGIN {IGNORECASE = 1} /$1/"
