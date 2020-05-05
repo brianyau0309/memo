@@ -4,7 +4,7 @@ memo="$HOME/Workdesk/memo"
 [ -d "$memo/allmemo" ] || mkdir "$pvm/allmemo"
 [ -d "$memo/tmp" ] || mkdir "$memo/tmp"
 
-writeMemo() {
+editMemo() {
   option="e"
   while :; do
     case "$option" in
@@ -34,7 +34,7 @@ writeMemo() {
 }
 
 previewMemo() {
-  #clear
+  clear
   echo "\033[93m--------------------- Memo Preview ---------------------"
   echo " Memo Name: $(echo $1 | rev |cut -d"/" -f 1 | rev)"
   echo " Tags: $(head -n 1 $1)"
@@ -55,7 +55,7 @@ lastMemo() {
     case $option in
       e) 
         cp "$memo/allmemo/$last" "$memo/tmp/$last"
-        writeMemo $last ;;
+        editMemo $last ;;
       d) rm "$memo/allmemo/$last" && echo "Memo Deleted";;
       *) ;;
     esac
@@ -84,7 +84,7 @@ listMemo() {
         case $option in
           e) 
             cp "$memo/allmemo/$target" "$memo/tmp/$target"
-            writeMemo $target ;;
+            editMemo $target ;;
           d) rm "$memo/allmemo/$target" && echo "Memo Deleted";;
           *) ;;
         esac
@@ -95,7 +95,7 @@ listMemo() {
 }
 
 case "$1" in
-  "") writeMemo "memo-$(date '+%Y-%m-%d_%H-%M-%S')" ;;
+  "") editMemo "memo-$(date '+%Y-%m-%d_%H-%M-%S')" ;;
   last) 
     case "$2" in
       "") lastMemo ;;
