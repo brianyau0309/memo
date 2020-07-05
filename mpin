@@ -1,0 +1,5 @@
+#!/bin/sh
+# Pin Today Memo by libnotify
+
+todaymemo="$(grep -l "Daily Plan $(date "+%d-%m-%Y")" ~/.config/memo/allmemo/*)" &&
+notify-send -u critical "Daily Plan $(date "+%d-%m-%Y")" "$(sed 1d $todaymemo)"
